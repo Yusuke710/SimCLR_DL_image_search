@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 import torch
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet18, resnet50, ResNet50_Weights
 
 from exceptions.exceptions import InvalidBackboneError
 
@@ -10,7 +10,7 @@ class ResNetSimCLR(nn.Module):
 
     def __init__(self, base_model, out_dim):
         super(ResNetSimCLR, self).__init__()
-        self.resnet_dict = {"resnet18": resnet18(pretrained=False, num_classes=out_dim),
+        self.resnet_dict = {"resnet18": resnet18(weights=None, num_classes=out_dim),
                             "resnet50": resnet50(weights=None, num_classes=out_dim),
                             # https://pytorch.org/vision/main/models/generated/torchvision.models.resnet50.html#torchvision.models.ResNet50_Weights
                             "resnet50_pretrain": resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)}
