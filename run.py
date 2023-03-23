@@ -14,13 +14,13 @@ parser = argparse.ArgumentParser(description='PyTorch SimCLR')
 parser.add_argument('-data', metavar='DIR', default='./datasets',
                     help='path to dataset')
 parser.add_argument('-dataset-name', default='stl10',
-                    help='dataset name', choices=['stl10', 'cifar10'])
-parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
+                    help='dataset name', choices=['cifar10', 'stl10', 'imagenet'])
+parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50_pretrain',
                     choices=model_names,
                     help='model architecture: ' +
                          ' | '.join(model_names) +
                          ' (default: resnet50)')
-parser.add_argument('-j', '--workers', default=12, type=int, metavar='N',
+parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 32)')
 parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
@@ -50,6 +50,8 @@ parser.add_argument('--temperature', default=0.07, type=float,
 parser.add_argument('--n-views', default=2, type=int, metavar='N',
                     help='Number of views for contrastive learning training.')
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
+parser.add_argument('--resume', default=None,
+                    help='path to checkpoint.pth.tar')
 
 
 def main():
@@ -73,11 +75,18 @@ def main():
         num_workers=args.workers, pin_memory=True, drop_last=True)
 
     model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim)
+    model = model.to(args.device)
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
+
+    # Load the checkpoint, not working
+    if args.resume is not None:
+        checkpoint = torch.load(args.resume, map_location=args.device)
+        model.load_state_dict(checkpoint['state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
 
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
