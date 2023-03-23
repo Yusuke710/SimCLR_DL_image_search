@@ -30,9 +30,18 @@ class ContrastiveLearningDataset:
 
                           'stl10': lambda: datasets.STL10(self.root_folder, split='unlabeled',
                                                           transform=ContrastiveLearningViewGenerator(
-                                                              self.get_simclr_pipeline_transform(96),
+                                                              self.get_simclr_pipeline_transform(224), #96
                                                               n_views),
-                                                          download=True)}
+                                                          download=True),
+                                                          
+                          'imagenet': lambda: datasets.ImageNet(self.root_folder,
+                                                          transform=ContrastiveLearningViewGenerator(
+                                                              self.get_simclr_pipeline_transform(224),
+                                                              n_views))
+                                                          #, download=True) you need to download it manually
+                                                          # https://www.image-net.org/download.php
+                                                          }
+                                                          
 
         try:
             dataset_fn = valid_datasets[name]
