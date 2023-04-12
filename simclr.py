@@ -5,7 +5,7 @@ import sys
 import torch
 import torch.nn.functional as F
 from torch.cuda.amp import GradScaler, autocast
-from torch.utils.tensorboard import SummaryWriter
+#from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import save_config_file, accuracy, save_checkpoint
 
@@ -19,8 +19,14 @@ class SimCLR(object):
         self.model = kwargs['model'] 
         self.optimizer = kwargs['optimizer']
         self.scheduler = kwargs['scheduler']
-        self.writer = SummaryWriter()
-        logging.basicConfig(filename=os.path.join(self.writer.log_dir, 'training.log'), level=logging.DEBUG)
+        #self.writer = SummaryWriter()
+        self.log_dir = "checkpoints"
+        self.log_name = "training.log"
+
+        if kwargs['freeze']:
+            self.log_name = "frozen_" + self.log_name
+
+        logging.basicConfig(filename=os.path.join(self.log_dir, self.log_name), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.args.device)
 
     def info_nce_loss(self, features):
@@ -59,11 +65,11 @@ class SimCLR(object):
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
         # save config file
-        save_config_file(self.writer.log_dir, self.args)
+        #save_config_file(self.writer.log_dir, self.args)
 
         n_iter = 0
-        logging.info(f"Start SimCLR training for {self.args.epochs} epochs.")
-        logging.info(f"Training with gpu: {self.args.device}.")
+        # logging.info(f"Start SimCLR training for {self.args.epochs} epochs.")
+        # logging.info(f"Training with gpu: {self.args.device}.")
 
         for epoch_counter in range(self.args.epochs):
             for images, _ in tqdm(train_loader):
@@ -85,11 +91,11 @@ class SimCLR(object):
 
                 if n_iter % self.args.log_every_n_steps == 0:
                     top1, top5 = accuracy(logits, labels, topk=(1, 5))
-                    self.writer.add_scalar('loss', loss, global_step=n_iter)
-                    self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
-                    self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
-                    self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
-
+                    #self.writer.add_scalar('loss', loss, global_step=n_iter)
+                    #self.writer.add_scalar('acc/top1', top1[0], global_step=n_iter)
+                    #self.writer.add_scalar('acc/top5', top5[0], global_step=n_iter)
+                    #self.writer.add_scalar('learning_rate', self.scheduler.get_lr()[0], global_step=n_iter)
+                    logging.info(f"Step {n_iter}:\t LOSS {loss} \t Top1 {top1[0]} \t Top5 {top5[0]}")
                 n_iter += 1
 
             # warmup for the first 10 epochs
@@ -104,10 +110,10 @@ class SimCLR(object):
                 'arch': self.args.arch,
                 'state_dict': self.model.state_dict(),
                 'optimizer': self.optimizer.state_dict(),
-            }, is_best=False, filename=os.path.join(self.writer.log_dir, checkpoint_name))
-            logging.info(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
+            }, is_best=False, filename=os.path.join("checkpoints", checkpoint_name))
+            #logging.info(f"Model checkpoint and metadata has been saved at {self.writer.log_dir}.")
 
-        logging.info("Training has finished.")
+        #logging.info("Training has finished.")
 
         '''
         # save model checkpoints

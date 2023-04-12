@@ -8,7 +8,7 @@ from exceptions.exceptions import InvalidBackboneError
 
 class ResNetSimCLR(nn.Module):
 
-    def __init__(self, base_model, out_dim):
+    def __init__(self, base_model, out_dim, freeze_resnet=False):
         super(ResNetSimCLR, self).__init__()
         self.resnet_dict = {"resnet18": resnet18(weights=None, num_classes=out_dim),
                             "resnet50": resnet50(weights=None, num_classes=out_dim),
@@ -17,12 +17,23 @@ class ResNetSimCLR(nn.Module):
 
         self.backbone = self._get_basemodel(base_model)
 
+        # Should be able to freeze the backbone (resnet model)
+        if freeze_resnet:
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+
         dim_mlp = self.backbone.fc.in_features
         # pre-trained model uses num class 1000. Modify in our case to compress vector
         self.backbone.fc = nn.Linear(dim_mlp, out_dim)
 
         # add mlp projection head
         self.backbone.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(), self.backbone.fc)
+
+        if freeze_resnet:
+            for param in self.backbone.fc.parameters():
+                param.requires_grad = True
+
+
 
     def _get_basemodel(self, model_name):
         try:

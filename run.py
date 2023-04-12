@@ -52,10 +52,13 @@ parser.add_argument('--n-views', default=2, type=int, metavar='N',
 parser.add_argument('--gpu-index', default=0, type=int, help='Gpu index.')
 parser.add_argument('--resume', default=None,
                     help='path to checkpoint.pth.tar')
+# Taylor added this (below).
+parser.add_argument('--freeze', default=False, type=bool, help='Freeze resnet conv layer?')
 
 
 def main():
     args = parser.parse_args()
+    print("DATASET: ", args.dataset_name)
     assert args.n_views == 2, "Only two view training is supported. Please use --n-views 2."
     # check if gpu training is available
     if not args.disable_cuda and torch.cuda.is_available():
@@ -74,13 +77,27 @@ def main():
         train_dataset, batch_size=args.batch_size, shuffle=True,
         num_workers=args.workers, pin_memory=True, drop_last=True)
 
-    model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim)
+    model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim, freeze_resnet=args.freeze)
     model = model.to(args.device)
 
-    optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
+    # Temp
+    freeze = False
+    if args.freeze:
+        freeze = True
+        optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), args.lr, weight_decay=args.weight_decay)
+    else:
+        optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=len(train_loader), eta_min=0,
                                                            last_epoch=-1)
+
+    # Log 
+    with open("config/model.txt", "w+") as file:
+        file.write("TRAINABLE LAYERS:")
+        for name, params in model.named_parameters():
+            file.write(f"MODEL_LAYER: {name} \t REQUIRES TRAINING: {params.requires_grad}\n")
+
+
 
     # Load the checkpoint, not working
     if args.resume is not None:
@@ -90,9 +107,10 @@ def main():
 
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
-        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
+        simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args, freeze=freeze)
         simclr.train(train_loader)
 
 
 if __name__ == "__main__":
+    print("Start run.")
     main()

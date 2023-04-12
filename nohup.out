@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "run.py", line 7, in <module>
+    from simclr import SimCLR
+  File "/fs04/vf38/SimCLR_DL_image_search/simclr.py", line 8, in <module>
+    from torch.utils.tensorboard import SummaryWriter
+  File "/scratch/vf38/rram0028/conda_envs/resnetsimclr_venv/lib/python3.7/site-packages/torch/utils/tensorboard/__init__.py", line 12, in <module>
+    from .writer import FileWriter, SummaryWriter  # noqa: F401
+  File "/scratch/vf38/rram0028/conda_envs/resnetsimclr_venv/lib/python3.7/site-packages/torch/utils/tensorboard/writer.py", line 9, in <module>
+    from tensorboard.compat.proto.event_pb2 import SessionLog
+  File "/scratch/vf38/rram0028/conda_envs/resnetsimclr_venv/lib/python3.7/site-packages/tensorboard/compat/proto/event_pb2.py", line 8, in <module>
+    from google.protobuf import descriptor as _descriptor
+  File "/scratch/vf38/rram0028/conda_envs/resnetsimclr_venv/lib/python3.7/site-packages/google/protobuf/descriptor.py", line 47, in <module>
+    from google.protobuf.pyext import _message
+ImportError: /usr/local/anaconda3/2021.05-gcc11.2.0-yvh6ydmewojx5rdqhltq5nqlmxtl3unh/lib/libstdc++.so.6: version `GLIBCXX_3.4.29' not found (required by /scratch/vf38/rram0028/conda_envs/resnetsimclr_venv/lib/python3.7/site-packages/google/protobuf/pyext/_message.cpython-37m-x86_64-linux-gnu.so)
